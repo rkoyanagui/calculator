@@ -10,14 +10,18 @@ import java.io.Serial;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-public class Numpad extends JPanel implements ActionListener
+public class Keypad extends JPanel implements ActionListener
 {
   private static final Color DARK_GRAY = new Color(68, 68, 68);
   private static final Color LIGHT_GRAY = new Color(99, 99, 99);
   private static final Color ORANGE = new Color(242, 163, 60);
 
-  public Numpad()
+  private final transient Memory memory;
+
+  public Keypad(Memory memory)
   {
+    this.memory = memory;
+
     GridBagLayout layout = new GridBagLayout();
     GridBagConstraints c = new GridBagConstraints();
 
@@ -54,6 +58,15 @@ public class Numpad extends JPanel implements ActionListener
     addButton("=", ORANGE, c, 4, 3);
   }
 
+  @Override
+  public void actionPerformed(ActionEvent e)
+  {
+    if (e.getSource() instanceof JButton button)
+    {
+      memory.processInput(button.getText());
+    }
+  }
+
   protected void addButton(String text, Color bgColor, GridBagConstraints c, int row, int column)
   {
     c.gridy = row;
@@ -61,15 +74,6 @@ public class Numpad extends JPanel implements ActionListener
     Button button = new Button(text, bgColor);
     button.addActionListener(this);
     add(button, c);
-  }
-
-  @Override
-  public void actionPerformed(ActionEvent e)
-  {
-    if (e.getSource() instanceof JButton button)
-    {
-      Memory.getInstance().processInput(button.getText());
-    }
   }
 
   @Serial

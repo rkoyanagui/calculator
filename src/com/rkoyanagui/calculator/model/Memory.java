@@ -10,8 +10,7 @@ import java.util.Optional;
 
 public class Memory
 {
-  private static final Memory instance = new Memory();
-  private static final String ERROR_MSG = "error";
+  static final String ERROR_MSG = "error";
 
   private final List<MemoryObserver> observers = new ArrayList<>();
   private Operation lastOperation;
@@ -21,14 +20,9 @@ public class Memory
   private String storedText;
   private String currentText;
 
-  private Memory()
+  public Memory()
   {
     clear();
-  }
-
-  public static Memory getInstance()
-  {
-    return instance;
   }
 
   public void addObserver(MemoryObserver observer)
@@ -38,11 +32,32 @@ public class Memory
 
   public String getCurrentText()
   {
-    if (currentText.isEmpty())
-    {
-      return "0";
-    }
     return currentText;
+  }
+
+  public void processInput(String text)
+  {
+    Operation operation = detectOperation(text);
+    switch (operation)
+    {
+      case DO_NOTHING:
+        return;
+      case CLEAR:
+        clear();
+        break;
+      case DECIMAL_POINT:
+        processDecimalPoint(text);
+        break;
+      case DIGIT:
+        processDigit(text);
+        break;
+      case EQUALS:
+        processEquals();
+        break;
+      default:
+        processArithmeticOperators(operation);
+    }
+    notifyObservers(getCurrentText());
   }
 
   protected void processDecimalPoint(String text)
@@ -106,31 +121,6 @@ public class Memory
     digitWasPressed = false;
   }
 
-  public void processInput(String text)
-  {
-    Operation operation = detectOperation(text);
-    switch (operation)
-    {
-      case DO_NOTHING:
-        return;
-      case CLEAR:
-        clear();
-        break;
-      case DECIMAL_POINT:
-        processDecimalPoint(text);
-        break;
-      case DIGIT:
-        processDigit(text);
-        break;
-      case EQUALS:
-        processEquals();
-        break;
-      default:
-        processArithmeticOperators(operation);
-    }
-    notifyObservers(getCurrentText());
-  }
-
   protected Optional<String> doMaths(String x, String y, Operation op)
   {
     if (DO_NOTHING.equals(op))
@@ -156,17 +146,17 @@ public class Memory
             case MULTIPLY -> a.multiply(b);
             case SUBTRACT -> a.subtract(b);
             case ADD -> a.add(b);
-            default -> throw new IllegalArgumentException("Unknown operation: " + op);
+            default -> throw new IllegalOperationException("Unknown operation: " + op);
           };
       return Optional.of(result.stripTrailingZeros().toPlainString());
     }
-    catch (ArithmeticException e)
+    catch (ArithmeticException | IllegalOperationException e)
     {
       return Optional.of(ERROR_MSG);
     }
   }
 
-  public Operation detectOperation(String text)
+  protected Operation detectOperation(String text)
   {
     // Leading zero
     if ("0".equals(currentText) && "0".equals(text))
@@ -206,6 +196,6 @@ public class Memory
     digitWasPressed = false;
     replacesPreviousText = true;
     storedText = "";
-    currentText = "";
+    currentText = "0";
   }
 }
